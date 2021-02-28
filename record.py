@@ -49,7 +49,7 @@ class CameraRecorder(object):
         else:
             print("start recording...")
             recording_file_name = "recording_{}.h264".format(time.strftime("%Y%m%d-%H%M%S"))
-            self._camera.start_recording(recording_file_name)
+            self._camera.start_recording(recording_file_name, format='h264')
             self._is_recording = True
 
     @property
@@ -63,7 +63,6 @@ def main():
     led = Led(led_pin)
 
     with picamera.PiCamera(resolution='1280x720', framerate=30) as camera:
-        camera.rotation = 180
         recorder = CameraRecorder(camera)
         button.add_pressed_cb(recorder.toggle_record)
         while(True):
