@@ -89,7 +89,7 @@ def switch_to_record_mode_on_reboot(channel):
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
 
-with picamera.PiCamera(resolution='1280x720', framerate=24) as camera:
+with picamera.PiCamera(resolution='1280x960', framerate=24) as camera:
     button_pin = 8
     led_pin = 10
     button = Button(button_pin)
