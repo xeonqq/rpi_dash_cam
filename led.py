@@ -4,7 +4,7 @@ import RPi.GPIO as GPIO
 class Led(object):
     def __init__(self, pin):
         self._pin = pin
-        GPIO.setmode(GPIO.BOARD) # Use physical pin numbering
+        GPIO.setmode(GPIO.BOARD)  # Use physical pin numbering
         GPIO.setup(self._pin, GPIO.OUT, initial=GPIO.LOW)
         self._state = GPIO.LOW
 
@@ -19,6 +19,3 @@ class Led(object):
     def off(self):
         GPIO.output(self._pin, GPIO.LOW)
         self._state = GPIO.LOW
-
-
-

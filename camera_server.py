@@ -8,7 +8,7 @@ from button import Button
 from led import Led
 import subprocess
 
-PAGE="""\
+PAGE = """\
 <html>
 <head>
 <title>picamera MJPEG streaming demo</title>
@@ -20,6 +20,7 @@ PAGE="""\
 </html>
 """
 
+
 class StreamingOutput(object):
     def __init__(self):
         self.frame = None
@@ -27,7 +28,7 @@ class StreamingOutput(object):
         self.condition = Condition()
 
     def write(self, buf):
-        if buf.startswith(b'\xff\xd8'):
+        if buf.startswith(b"\xff\xd8"):
             # New frame, copy the existing buffer's content and notify all
             # clients it's available
             self.buffer.truncate()
@@ -37,49 +38,54 @@ class StreamingOutput(object):
             self.buffer.seek(0)
         return self.buffer.write(buf)
 
+
 class StreamingHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path == '/':
+        if self.path == "/":
             self.send_response(301)
-            self.send_header('Location', '/index.html')
+            self.send_header("Location", "/index.html")
             self.end_headers()
-        elif self.path == '/index.html':
-            content = PAGE.encode('utf-8')
+        elif self.path == "/index.html":
+            content = PAGE.encode("utf-8")
             self.send_response(200)
-            self.send_header('Content-Type', 'text/html')
-            self.send_header('Content-Length', len(content))
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", len(content))
             self.end_headers()
             self.wfile.write(content)
-        elif self.path == '/stream.mjpg':
+        elif self.path == "/stream.mjpg":
             self.send_response(200)
-            self.send_header('Age', 0)
-            self.send_header('Cache-Control', 'no-cache, private')
-            self.send_header('Pragma', 'no-cache')
-            self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=FRAME')
+            self.send_header("Age", 0)
+            self.send_header("Cache-Control", "no-cache, private")
+            self.send_header("Pragma", "no-cache")
+            self.send_header(
+                "Content-Type", "multipart/x-mixed-replace; boundary=FRAME"
+            )
             self.end_headers()
             try:
                 while True:
                     with output.condition:
                         output.condition.wait()
                         frame = output.frame
-                    self.wfile.write(b'--FRAME\r\n')
-                    self.send_header('Content-Type', 'image/jpeg')
-                    self.send_header('Content-Length', len(frame))
+                    self.wfile.write(b"--FRAME\r\n")
+                    self.send_header("Content-Type", "image/jpeg")
+                    self.send_header("Content-Length", len(frame))
                     self.end_headers()
                     self.wfile.write(frame)
-                    self.wfile.write(b'\r\n')
+                    self.wfile.write(b"\r\n")
                     led.toggle()
             except Exception as e:
                 logging.warning(
-                    'Removed streaming client %s: %s',
-                    self.client_address, str(e))
+                    "Removed streaming client %s: %s", self.client_address, str(e)
+                )
         else:
             self.send_error(404)
             self.end_headers()
 
+
 class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     allow_reuse_address = True
     daemon_threads = True
+
 
 def switch_to_record_mode_on_reboot(channel):
     bashCommand = "sudo cp rpicam-record-proccess.conf /etc/supervisor/conf.d/rpicam-record-proccess.conf"
@@ -89,7 +95,8 @@ def switch_to_record_mode_on_reboot(channel):
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
 
-with picamera.PiCamera(resolution='1280x960', framerate=24) as camera:
+
+with picamera.PiCamera(resolution="1280x960", framerate=24) as camera:
     button_pin = 8
     led_pin = 10
     button = Button(button_pin)
@@ -97,9 +104,9 @@ with picamera.PiCamera(resolution='1280x960', framerate=24) as camera:
     button.add_pressed_cb(switch_to_record_mode_on_reboot)
 
     output = StreamingOutput()
-    camera.start_recording(output, format='mjpeg')
+    camera.start_recording(output, format="mjpeg")
     try:
-        address = ('', 8000)
+        address = ("", 8000)
         server = StreamingServer(address, StreamingHandler)
         server.serve_forever()
     finally:
