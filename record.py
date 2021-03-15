@@ -9,12 +9,15 @@ import logging
 import io
 import queue
 from statemachine import StateMachine, State
+
 logging.basicConfig(level=logging.DEBUG)
 
 
 class Tape(object):
-    MAX_QUEUE_SIZE = 50 
-    MAX_BUFFER_SIZE = 1 * 1024 * 1024 # memory buffer size, before put into the queue for disk writing
+    MAX_QUEUE_SIZE = 50
+    MAX_BUFFER_SIZE = (
+        1 * 1024 * 1024
+    )  # memory buffer size, before put into the queue for disk writing
 
     def __init__(self):
         self._tape_queue = queue.Queue(Tape.MAX_QUEUE_SIZE)
@@ -87,7 +90,9 @@ class CameraRecorder(StateMachine):
                 self.toggle()
 
     def on_enter_recording(self):
-        filename = "{}/recording_{}.h264".format(self._folder, time.strftime("%Y%m%d-%H%M%S"))
+        filename = "{}/recording_{}.h264".format(
+            self._folder, time.strftime("%Y%m%d-%H%M%S")
+        )
         logging.info("start recording, saving to {}".format(filename))
         self._tape.open(filename)
         self._camera.start_recording(self._tape, format="h264")
