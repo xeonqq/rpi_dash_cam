@@ -8,6 +8,7 @@ import threading
 import logging
 import io
 import queue
+import subprocess
 from statemachine import StateMachine, State
 
 logging.basicConfig(level=logging.DEBUG)
@@ -90,17 +91,34 @@ class CameraRecorder(StateMachine):
                 self.toggle()
 
     def on_enter_recording(self):
-        filename = "{}/recording_{}.h264".format(
+        self._filename = "{}/recording_{}.h264".format(
             self._folder, time.strftime("%Y%m%d-%H%M%S")
         )
-        logging.info("start recording, saving to {}".format(filename))
-        self._tape.open(filename)
+        logging.info("start recording, saving to {}".format(self._filename))
+        self._tape.open(self._filename)
         self._camera.start_recording(self._tape, format="h264")
 
     def on_enter_idle(self):
         logging.info("stop recording...")
         self._camera.stop_recording()
         self._tape.close()
+        self._led.off()
+        self._convert_record_to_mp4()
+
+    def _convert_record_to_mp4(self):
+        cmd = "MP4Box -add {filename}:fps={fps} {filename}.mp4".format(
+            filename=self._filename, fps=self._camera.framerate
+        )
+        code = subprocess.call(cmd.split())
+        if code == 0:
+            self._delete_h264_file()
+            logging.info("converted h264 file to {}.mp4".format(self._filename))
+        else:
+            logging.error("conversion to mp4 failed")
+
+    def _delete_h264_file(self):
+        cmd = "rm {filename}".format(filename=self._filename)
+        subprocess.call(cmd.split())
 
     def run(self):
         while True:
