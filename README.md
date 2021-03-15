@@ -16,5 +16,5 @@ python3 record.py
 ### Start RPI dash-cam on boot
 ```bash
 sudo apt-get install supervisor
-sudo cp rpicam-record-proccess.conf_ /etc/supervisor/conf.d/
+sudo cp rpicam-record-proccess.conf /etc/supervisor/conf.d/
 ```
