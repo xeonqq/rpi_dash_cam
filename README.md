@@ -8,7 +8,7 @@
 
   During recording `rpi dash cam` requires very little CPU and memory source, it uses techniques like *Theading* and *Event Queue* to handle the workload between capturing and buffer saving. Thus solves the frame dropping problem many people are facing when recording long-duration video.
   
-  *Tested on RPI3 model B*
+  *Tested on RPI3 model B with rpi camera V2*. [Demo video](https://youtu.be/LCdgOeGI45s).
 
   <a class="bmc-button" target="_blank" href="https://www.buymeacoffee.com/xeonqq"><img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Buy me a coffee 😇"><span style="margin-left:5px;font-size:19px !important;">Buy me a coffee 😇</span></a>
 
