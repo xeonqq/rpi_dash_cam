@@ -7,11 +7,14 @@ import RPi.GPIO as GPIO
 import threading
 import logging
 import io
+import os
 import queue
 import subprocess
 from statemachine import StateMachine, State
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    filename="{}/rpi_dashcam.log".format(os.getcwd()), level=logging.DEBUG
+)
 
 
 class Tape(object):
@@ -120,6 +123,7 @@ class CameraRecorder(StateMachine):
 
     # async call from button interrupt
     def _add_toggle_event(self, pin):
+        logging.info("button pressed")
         self._events.put(ToggleEvent(self))
 
     def _add_convert_mp4_event(self):
@@ -157,6 +161,7 @@ class CameraRecorder(StateMachine):
 
 
 def main():
+    logging.info("rpi dashcam ready to record!")
     button_pin = 8
     led_pin = 10
     button = Button(button_pin)
