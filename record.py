@@ -95,10 +95,43 @@ class ConvertMP4Event(object):
         subprocess.call(cmd.split())
 
 
+def is_rtc_available():
+    cmd = "timedatectl | grep 'RTC time' | cut -d ':' -f2|sed 's/^ *//g'"
+    ps = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
+    output = ps.communicate()[0].strip()
+    return False if output == "n/a".encode("ASCII") else True
+
+
+def generate_recording_filename(folder):
+    filename = None
+    if is_rtc_available():
+        filename = "{}/recording_{}.h264".format(folder, time.strftime("%Y%m%d-%H%M%S"))
+    else:
+        counter_file = "{}/counter.txt".format(folder)
+        if os.path.isfile(counter_file):
+            with open(counter_file, "r+") as f:
+                line = f.readline()
+                content = line.strip()
+                new_count = int(content) + 1
+                f.seek(0)
+                f.write(str(new_count))
+                f.truncate()
+        else:
+            with open(counter_file, "w+") as f:
+                new_count = 0
+                f.seek(0)
+                f.write(str(new_count))
+
+        filename = "{}/recording_{}.h264".format(folder, new_count)
+    return filename
+
+
 class CameraRecorder(StateMachine):
 
-    idle = State("Idle", initial=True)
     recording = State("Recording")
+    idle = State("Idle", initial=True)
 
     toggle = idle.to(recording) | recording.to(idle)
 
@@ -112,6 +145,7 @@ class CameraRecorder(StateMachine):
         self._events = queue.Queue()
         self._conversion_queue = queue.Queue()
         self._button.add_pressed_cb(self._add_toggle_event)
+        self._rtc_available = is_rtc_available()
 
     @property
     def fps(self):
@@ -135,9 +169,7 @@ class CameraRecorder(StateMachine):
             evt.execute()
 
     def on_enter_recording(self):
-        self._filename = "{}/recording_{}.h264".format(
-            self._folder, time.strftime("%Y%m%d-%H%M%S")
-        )
+        self._filename = generate_recording_filename(self._folder)
         logging.info("start recording, saving to {}".format(self._filename))
         self._tape.open(self._filename)
         self._camera.start_recording(self._tape, format="h264")
@@ -150,6 +182,7 @@ class CameraRecorder(StateMachine):
         self._add_convert_mp4_event()
 
     def run(self):
+        self.toggle()
         while True:
             self._process_event()
             if self.is_recording:
@@ -166,7 +199,7 @@ def main():
     led_pin = 10
     button = Button(button_pin)
     led = Led(led_pin)
-    recording_folder = "/mnt/hdd"
+    recording_folder = "/home/pi"
 
     with picamera.PiCamera(resolution="1280x960", framerate=24) as camera:
         recorder = CameraRecorder(camera, button, led, recording_folder)
